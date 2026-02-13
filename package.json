@@ -1,0 +1,38 @@
+{
+  "name": "uniapp-todo-app",
+  "version": "1.0.0",
+  "description": "UniApp Todo Application with Vue3 and TypeScript",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest --run",
+    "test:unit": "vitest --run --grep -Property",
+    "test:property": "vitest --run --grep Property",
+    "test:coverage": "vitest --run --coverage"
+  },
+  "dependencies": {
+    "@dcloudio/uni-app": "^3.0.0-alpha-3090020230817001",
+    "@dcloudio/uni-components": "^3.0.0-alpha-3090020230817001",
+    "@dcloudio/uni-h5": "^3.0.0-alpha-3090020230817001",
+    "@dcloudio/uni-mp-weixin": "^3.0.0-alpha-3090020230817001",
+    "axios": "^1.6.0",
+    "pinia": "^2.1.7",
+    "vue": "^3.3.4"
+  },
+  "devDependencies": {
+    "@dcloudio/types": "^3.3.2",
+    "@dcloudio/uni-cli-shared": "^3.0.0-alpha-3090020230817001",
+    "@dcloudio/vite-plugin-uni": "^3.0.0-alpha-3090020230817001",
+    "@types/node": "^20.8.0",
+    "@vitejs/plugin-vue": "^4.4.0",
+    "@vitest/ui": "^0.34.6",
+    "@vue/test-utils": "^2.4.1",
+    "fast-check": "^3.13.2",
+    "jsdom": "^28.0.0",
+    "typescript": "^5.2.2",
+    "vite": "^4.5.0",
+    "vitest": "^0.34.6"
+  },
+  "packageManager": "pnpm@10.4.1+sha1.ec73125afa7b740b8fcafeab681883c7ec791a4b"
+}
