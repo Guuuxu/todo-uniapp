@@ -1,8 +1,35 @@
+# 依赖
 node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# 编译输出
+unpackage/
 dist/
-.DS_Store
+
+# 日志
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 编辑器
 .vscode/
 .idea/
-unpackage/
+*.swp
+*.swo
+*~
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 测试覆盖率
 coverage/
+
