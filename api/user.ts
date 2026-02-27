@@ -42,7 +42,7 @@ export function getUserInfo(): Promise<UserInfo> {
  */
 export function updateUserInfo(data: Partial<UserInfo>): Promise<UserInfo> {
   return request({
-    url: '/user/info',
+    url: '/users/update',
     method: 'PUT',
     data,
   })

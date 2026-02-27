@@ -88,7 +88,7 @@ import { useCommentStore } from '@/stores/comment'
 import CommentItem from '@/components/CommentItem.vue'
 import Empty from '@/components/Empty.vue'
 import { formatDate } from '@/utils/format'
-import { todoApi } from '@/api/todo'
+import * as todoApi from '@/api/todo'
 
 // 使用 hooks 和 stores
 const { requireAuth, userInfo } = useAuth()

@@ -86,7 +86,7 @@ export function getRanking(
   type: 'likes' | 'completed' = 'likes',
 ): Promise<Todo[]> {
   return request({
-    url: '/todos/ranking',
+    url: '/rankings',
     method: 'GET',
     params: { type },
   })

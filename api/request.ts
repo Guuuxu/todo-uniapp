@@ -63,22 +63,40 @@ function request<T = any>(config: RequestConfig): Promise<T> {
       success: (res: any) => {
         // 响应拦截器：处理响应
         const statusCode = res.statusCode
-        const responseData = res.data as ApiResponse<T>
+        const responseData = res.data
 
         // HTTP 状态码错误处理
         if (statusCode >= 200 && statusCode < 300) {
           // 处理业务响应
-          if (responseData.code === 0 || responseData.code === 200) {
-            resolve(responseData.data as T)
-          } else {
-            // 业务错误
-            const message = responseData.message || '请求失败'
-            uni.showToast({
-              title: message,
-              icon: 'none',
-            })
-            reject(new Error(message))
+          // 检查响应数据格式
+          if (responseData && typeof responseData === 'object') {
+            // 如果响应直接是数组（某些 API 可能直接返回数组）
+            if (Array.isArray(responseData)) {
+              resolve(responseData as T)
+              return
+            }
+            
+            // 标准格式：{ code, message, data }
+            if ('code' in responseData) {
+              const apiResponse = responseData as ApiResponse<T>
+              if (apiResponse.code === 0 || apiResponse.code === 200) {
+                resolve(apiResponse.data as T)
+                return
+              } else {
+                // 业务错误
+                const message = apiResponse.message || '请求失败'
+                uni.showToast({
+                  title: message,
+                  icon: 'none',
+                })
+                reject(new Error(message))
+                return
+              }
+            }
           }
+          
+          // 如果格式不符合预期，尝试直接返回数据
+          resolve(responseData as T)
         } else if (statusCode === 401) {
           // 401 未授权：清除 token 和用户信息，跳转到登录页
           removeToken()

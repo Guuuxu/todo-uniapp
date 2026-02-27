@@ -2,18 +2,10 @@
   <view class="ranking-page">
     <!-- 排序方式切换 -->
     <view class="ranking-tabs">
-      <view
-        class="tab-item"
-        :class="{ active: rankingType === 'likes' }"
-        @click="switchRankingType('likes')"
-      >
+      <view class="tab-item" :class="{ active: rankingType === 'likes' }" @click="switchRankingType('likes')">
         按点赞数
       </view>
-      <view
-        class="tab-item"
-        :class="{ active: rankingType === 'completed' }"
-        @click="switchRankingType('completed')"
-      >
+      <view class="tab-item" :class="{ active: rankingType === 'completed' }" @click="switchRankingType('completed')">
         按完成数
       </view>
     </view>
@@ -25,18 +17,10 @@
 
     <!-- 排行榜列表 -->
     <view v-else-if="rankingList.length > 0" class="ranking-list">
-      <view
-        v-for="(todo, index) in rankingList"
-        :key="todo.id"
-        class="ranking-item"
-      >
+      <view v-for="(todo, index) in rankingList" :key="todo.id" class="ranking-item">
         <view class="ranking-number">{{ index + 1 }}</view>
         <view class="ranking-content">
-          <TodoItem
-            :todo="todo"
-            :show-actions="false"
-            @click="handleTodoClick(todo.id)"
-          />
+          <TodoItem :todo="todo" :show-actions="false" @click="handleTodoClick(todo.id)" />
         </view>
       </view>
     </view>
@@ -80,7 +64,6 @@ async function switchRankingType(type: 'likes' | 'completed') {
   try {
     await todoStore.fetchRanking(type)
   } catch (error) {
-    console.error('加载排行榜失败:', error)
     uni.showToast({
       title: '加载失败',
       icon: 'none',
@@ -109,7 +92,6 @@ onMounted(async () => {
   try {
     await todoStore.fetchRanking(rankingType.value)
   } catch (error) {
-    console.error('加载排行榜失败:', error)
     uni.showToast({
       title: '加载失败',
       icon: 'none',
