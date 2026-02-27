@@ -99,12 +99,40 @@ export const useTodoStore = defineStore('todo', () => {
     if (todoInList) {
       todoInList.likes = result.likes
       todoInList.is_liked = result.is_liked
+      // 同时更新 like_count 字段（前端使用的字段名）
+      ;(todoInList as any).like_count = result.likes
     }
 
     // 更新当前 todo
     if (currentTodo.value?.id === id) {
       currentTodo.value.likes = result.likes
       currentTodo.value.is_liked = result.is_liked
+      // 同时更新 like_count 字段（前端使用的字段名）
+      ;(currentTodo.value as any).like_count = result.likes
+    }
+  }
+
+  /**
+   * 取消点赞
+   */
+  async function cancelLike(id: string): Promise<void> {
+    const result = await todoApi.cancelLike(id)
+
+    // 更新列表中的 todo
+    const todoInList = todoList.value.find((todo) => todo.id === id)
+    if (todoInList) {
+      todoInList.likes = result.likes
+      todoInList.is_liked = result.is_liked
+      // 同时更新 like_count 字段（前端使用的字段名）
+      ;(todoInList as any).like_count = result.likes
+    }
+
+    // 更新当前 todo
+    if (currentTodo.value?.id === id) {
+      currentTodo.value.likes = result.likes
+      currentTodo.value.is_liked = result.is_liked
+      // 同时更新 like_count 字段（前端使用的字段名）
+      ;(currentTodo.value as any).like_count = result.likes
     }
   }
 
@@ -135,6 +163,7 @@ export const useTodoStore = defineStore('todo', () => {
     updateTodo,
     deleteTodo,
     toggleLike,
+    cancelLike,
     fetchRanking,
   }
 })

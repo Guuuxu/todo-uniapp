@@ -1,17 +1,17 @@
 <template>
   <view class="todo-item" @click="handleClick">
     <view class="todo-header">
-      <view class="todo-title">{{ todo.title }}</view>
+      <view class="todo-title">{{ todo.username }}</view>
       <view v-if="showActions" class="todo-actions">
         <button class="delete-btn" @click.stop="handleDelete">删除</button>
       </view>
     </view>
-    <view class="todo-content">{{ todo.description }}</view>
+    <view class="todo-content">{{ todo.content }}</view>
     <view class="todo-footer">
       <view class="todo-stats">
         <view v-if="rankingType !== 'completed'" class="stat-item">
           <text class="stat-icon">👍</text>
-          <text class="stat-text">{{ todo.like_count }}</text>
+          <text class="stat-text">{{ todo.total_likes || todo.like_count }}</text>
         </view>
         <view v-if="rankingType === 'completed'" class="stat-item">
           <text class="stat-icon">✅</text>
@@ -19,7 +19,7 @@
         </view>
         <view class="stat-item">
           <text class="stat-icon">💬</text>
-          <text class="stat-text">{{ todo.comment_count }}</text>
+          <text class="stat-text">{{ todo.total_comments }}</text>
         </view>
       </view>
       <view v-if="todo.completed && rankingType !== 'completed'" class="todo-status">✅ 已完成</view>

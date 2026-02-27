@@ -18,7 +18,7 @@
             </text>
           </view>
         </view>
-        <view class="todo-content">{{ todoStore.currentTodo.content }}</view>
+        <view class="todo-content">{{ todoStore.currentTodo.description }}</view>
         <view class="todo-meta">
           <view class="meta-item">
             <text class="meta-icon">📅</text>
@@ -41,7 +41,7 @@
           <view class="action-btn comment-count">
             <text class="action-icon">💬</text>
             <text class="action-text">{{
-              todoStore.currentTodo.commentCount
+              todoStore.currentTodo.comment_count
             }}</text>
           </view>
         </view>
@@ -88,7 +88,6 @@ import { useCommentStore } from '@/stores/comment'
 import CommentItem from '@/components/CommentItem.vue'
 import Empty from '@/components/Empty.vue'
 import { formatDate } from '@/utils/format'
-import * as todoApi from '@/api/todo'
 
 // 使用 hooks 和 stores
 const { requireAuth, userInfo } = useAuth()
@@ -106,8 +105,8 @@ const commentList = computed(() => {
 })
 
 const formattedDate = computed(() => {
-  if (!todoStore.currentTodo || !todoStore.currentTodo.createdAt) return ''
-  return formatDate(todoStore.currentTodo.createdAt, 'YYYY-MM-DD HH:mm')
+  if (!todoStore.currentTodo || !todoStore.currentTodo.created_at) return ''
+  return formatDate(todoStore.currentTodo.created_at, 'YYYY-MM-DD HH:mm')
 })
 
 /**
@@ -152,12 +151,13 @@ async function loadComments() {
  * 切换点赞状态
  */
 async function handleToggleLike() {
-  console.log(todoStore.currentTodo?.is_liked)
   try {
     if (todoStore.currentTodo?.is_liked) {
-      await todoApi.cancelLike(todoId.value)
+      await todoStore.cancelLike(todoId.value)
+      todoStore.currentTodo.like_count -= 1
     } else {
       await todoStore.toggleLike(todoId.value)
+      todoStore.currentTodo.like_count += 1
     }
   } catch (error) {
     uni.showToast({

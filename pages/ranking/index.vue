@@ -20,7 +20,7 @@
       <view v-for="(todo, index) in rankingList" :key="todo.id" class="ranking-item">
         <view class="ranking-number">{{ index + 1 }}</view>
         <view class="ranking-content">
-          <TodoItem :todo="todo" :show-actions="false" @click="handleTodoClick(todo.id)" />
+          <RankItem :todo="todo" :show-actions="false" :ranking-type="rankingType" @click="handleTodoClick(todo.id)" />
         </view>
       </view>
     </view>
@@ -39,7 +39,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuth } from '@/hooks/useAuth'
 import { useTodoStore } from '@/stores/todo'
-import TodoItem from '@/components/TodoItem.vue'
+import RankItem from '@/components/RankItem.vue'
 import Empty from '@/components/Empty.vue'
 
 const { requireAuth } = useAuth()

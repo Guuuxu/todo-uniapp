@@ -72,7 +72,7 @@ export function toggleLike(
 /**
  * 取消点赞
  */
-export function cancelLike(id: string): Promise<void> {
+export function cancelLike(id: string): Promise<{ likes: number; is_liked: boolean }> {
   return request({
     url: `/todos/${id}/like`,
     method: 'DELETE',
