@@ -47,3 +47,17 @@ export function updateUserInfo(data: Partial<UserInfo>): Promise<UserInfo> {
     data,
   })
 }
+
+/**
+ * 微信登录
+ */
+export function wechatLogin(data: {
+  code: string
+  userInfo?: any
+}): Promise<LoginResponse> {
+  return request({
+    url: '/auth/wechat',
+    method: 'POST',
+    data,
+  })
+}

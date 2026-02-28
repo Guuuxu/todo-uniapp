@@ -102,7 +102,7 @@ const statistics = computed(() => {
   const todos = todoStore.todoList
   const totalTodos = todos.length
   const completedTodos = todos.filter((todo) => todo.completed).length
-  const totalLikes = todos.reduce((sum, todo) => sum + todo.likes, 0)
+  const totalLikes = todos.reduce((sum, todo) => sum + todo.like_count, 0)
 
   return {
     totalTodos,

@@ -89,6 +89,23 @@ export const useUserStore = defineStore('user', () => {
     saveUserInfo(updatedInfo)
   }
 
+  /**
+   * 微信登录
+   */
+  async function wechatLogin(data: {
+    code: string
+    userInfo?: any
+  }): Promise<void> {
+    const response = await userApi.wechatLogin(data)
+    token.value = response.token
+    userInfo.value = response.user
+    isLoggedIn.value = true
+
+    // 保存到本地存储
+    saveToken(response.token)
+    saveUserInfo(response.user)
+  }
+
   return {
     // State
     token,
@@ -102,5 +119,6 @@ export const useUserStore = defineStore('user', () => {
     logout,
     fetchUserInfo,
     updateUserInfo,
+    wechatLogin,
   }
 })
