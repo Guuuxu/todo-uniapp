@@ -49,6 +49,16 @@ export function updateTodo(id: string, data: UpdateTodoRequest): Promise<Todo> {
 }
 
 /**
+ * 完成
+ */
+export function completeTodo(id: string): Promise<Todo> {
+  return request({
+    url: `/todos/${id}/complete`,
+    method: 'POST',
+  })
+}
+
+/**
  * 删除 Todo
  */
 export function deleteTodo(id: string): Promise<void> {

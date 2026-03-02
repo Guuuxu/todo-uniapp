@@ -66,8 +66,6 @@ function request<T = any>(config: RequestConfig): Promise<T> {
         const statusCode = res.statusCode
         const responseData = res.data
 
-        console.log('[TODO_DEBUG] 响应状态码:', statusCode, '响应数据:', responseData)
-
         // HTTP 状态码错误处理
         if (statusCode >= 200 && statusCode < 300) {
           // 处理业务响应

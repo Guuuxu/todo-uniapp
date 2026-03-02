@@ -71,6 +71,13 @@ export const useTodoStore = defineStore('todo', () => {
   }
 
   /**
+   * 完成 Todo
+   */
+  async function completeTodo(id: string): Promise<void> {
+    await todoApi.completeTodo(id)
+  }
+
+  /**
    * 删除 Todo
    */
   async function deleteTodo(id: string): Promise<void> {
@@ -161,6 +168,7 @@ export const useTodoStore = defineStore('todo', () => {
     fetchTodoDetail,
     createTodo,
     updateTodo,
+    completeTodo,
     deleteTodo,
     toggleLike,
     cancelLike,

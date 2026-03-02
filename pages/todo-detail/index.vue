@@ -110,7 +110,7 @@
       <view v-else class="error-container">
         <Empty message="Todo 不存在或已被删除" icon="❌" />
       </view>
-    </view>
+    
 
     <!-- 邀请监督弹窗 -->
     <view v-if="showInviteModal" class="modal-overlay" @click="showInviteModal = false">
@@ -182,7 +182,7 @@ const formattedDate = computed(() => {
 
 // 获取 Todo 的创建者 ID（兼容 userId 和 user_id）
 const getTodoUserId = (todo: any): string | undefined => {
-  return todo?.userId || todo?.user_id || todo?.user?.id
+  return todo?.user_id || todo?.user?.id
 }
 
 // 判断是否可以编辑（创建者或监督人）
@@ -197,6 +197,7 @@ const canEdit = computed(() => {
 
 // 判断是否是创建者（只有创建者可以邀请监督）
 const isOwner = computed(() => {
+  console.log(todoStore)
   if (!todoStore.currentTodo || !userInfo.value) {
     console.log('[TODO_DEBUG] isOwner: 缺少数据', {
       hasTodo: !!todoStore.currentTodo,
@@ -279,7 +280,7 @@ async function handleToggleComplete() {
 
   try {
     const newCompleted = !todoStore.currentTodo.completed
-    await todoStore.updateTodo(todoId.value, { completed: newCompleted })
+    await todoStore.completeTodo(todoId.value, { completed: newCompleted })
     uni.showToast({
       title: newCompleted ? '标记为已完成' : '标记为未完成',
       icon: 'success',
