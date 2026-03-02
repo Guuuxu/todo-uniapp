@@ -20,7 +20,7 @@
       <view v-for="(todo, index) in rankingList" :key="todo.id" class="ranking-item">
         <view class="ranking-number">{{ index + 1 }}</view>
         <view class="ranking-content">
-          <RankItem :todo="todo" :show-actions="false" :ranking-type="rankingType" @click="handleTodoClick(todo.id)" />
+          <RankItem :todo="todo" :show-actions="false" :ranking-type="rankingType" @click="handleTodoClick" />
         </view>
       </view>
     </view>
@@ -41,8 +41,9 @@ import { useAuth } from '@/hooks/useAuth'
 import { useTodoStore } from '@/stores/todo'
 import RankItem from '@/components/RankItem.vue'
 import Empty from '@/components/Empty.vue'
+import type { Todo } from '@/types/todo'
 
-const { requireAuth } = useAuth()
+const { checkAuth } = useAuth()
 const todoStore = useTodoStore()
 
 // 加载状态
@@ -63,22 +64,44 @@ async function switchRankingType(type: 'likes' | 'completed') {
   loading.value = true
   try {
     await todoStore.fetchRanking(type)
-  } catch (error) {
-    uni.showToast({
-      title: '加载失败',
-      icon: 'none',
-    })
+  } catch (error: any) {
+    // 未登录时加载失败不显示错误提示（可能是401未授权）
+    if (checkAuth()) {
+      uni.showToast({
+        title: '加载失败',
+        icon: 'none',
+      })
+    }
   } finally {
     loading.value = false
   }
 }
 
 /**
- * 点击 Todo 跳转到详情页
+ * 点击 Todo 跳转到榜单详情页
  */
 function handleTodoClick(id: string) {
+  // 找到对应的 todo 获取 userId
+  const todo = rankingList.value.find((t: Todo) => t.id === id)
+  
+  if (!todo) {
+    return
+  }
+
+  // 检查 userId，可能是 userId 或 user_id
+  const userId = (todo as any).userId || (todo as any).user_id
+  
+  if (!userId) {
+    uni.showToast({
+      title: '用户信息不存在',
+      icon: 'none',
+    })
+    return
+  }
+
+  // 跳转到榜单详情页
   uni.navigateTo({
-    url: `/pages/todo-detail/index?id=${id}`,
+    url: `/pages/ranking/detail?userId=${userId}`,
   })
 }
 
@@ -86,16 +109,17 @@ function handleTodoClick(id: string) {
  * 初始化加载排行榜
  */
 onMounted(async () => {
-  if (!requireAuth()) return
-
   loading.value = true
   try {
     await todoStore.fetchRanking(rankingType.value)
-  } catch (error) {
-    uni.showToast({
-      title: '加载失败',
-      icon: 'none',
-    })
+  } catch (error: any) {
+    // 未登录时加载失败不显示错误提示（可能是401未授权）
+    if (checkAuth()) {
+      uni.showToast({
+        title: '加载失败',
+        icon: 'none',
+      })
+    }
   } finally {
     loading.value = false
   }

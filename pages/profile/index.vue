@@ -3,6 +3,9 @@
     <!-- 用户信息卡片 -->
     <view class="user-card">
       <view v-if="loading" class="loading">加载中...</view>
+      <view v-else-if="!userInfo" class="not-logged-in">
+        <text class="not-logged-in-text">请先登录查看个人信息</text>
+      </view>
       <template v-else-if="userInfo">
         <!-- 头像和用户名 -->
         <view class="user-header">
@@ -41,6 +44,16 @@
       </template>
     </view>
 
+    <!-- 功能入口 -->
+    <view v-if="!loading && userInfo" class="action-section">
+      <view class="section-title">功能</view>
+      <view class="menu-item" @click="goToWatching">
+        <text class="menu-icon">👁️</text>
+        <text class="menu-text">我监督的Todo</text>
+        <text class="menu-arrow">›</text>
+      </view>
+    </view>
+
     <!-- 编辑个人信息 -->
     <view v-if="!loading && userInfo" class="action-section">
       <view class="section-title">个人信息</view>
@@ -65,8 +78,11 @@
     </view>
 
     <!-- 退出登录 -->
-    <view v-if="!loading" class="logout-section">
+    <view v-if="!loading && userInfo" class="logout-section">
       <button class="logout-btn" @click="handleLogout">退出登录</button>
+    </view>
+    <view v-if="!loading && !userInfo" class="not-logged-in">
+      <button class="login-btn" @click="goToLogin">去登录</button>
     </view>
   </view>
 </template>
@@ -83,7 +99,7 @@ import { useUserStore } from '@/stores/user'
 import { useTodoStore } from '@/stores/todo'
 
 // 使用 hooks 和 stores
-const { requireAuth, logout } = useAuth()
+const { checkAuth, logout } = useAuth()
 const userStore = useUserStore()
 const todoStore = useTodoStore()
 
@@ -115,6 +131,11 @@ const statistics = computed(() => {
  * 加载用户信息和 Todo 列表
  */
 async function loadData() {
+  if (!checkAuth()) {
+    loading.value = false
+    return
+  }
+
   loading.value = true
   try {
     // 加载用户信息
@@ -128,11 +149,14 @@ async function loadData() {
       editForm.value.username = userInfo.value.username
       editForm.value.avatar = userInfo.value.avatar || ''
     }
-  } catch (error) {
-    uni.showToast({
-      title: '加载失败',
-      icon: 'none',
-    })
+  } catch (error: any) {
+    // 未登录时加载失败不显示错误提示（可能是401未授权）
+    if (checkAuth()) {
+      uni.showToast({
+        title: '加载失败',
+        icon: 'none',
+      })
+    }
   } finally {
     loading.value = false
   }
@@ -142,6 +166,14 @@ async function loadData() {
  * 更新用户信息
  */
 async function handleUpdate() {
+  if (!checkAuth()) {
+    uni.showToast({
+      title: '请先登录',
+      icon: 'none',
+    })
+    return
+  }
+
   // 验证输入
   if (!editForm.value.username.trim()) {
     uni.showToast({
@@ -170,9 +202,43 @@ async function handleUpdate() {
 }
 
 /**
+ * 跳转到登录页
+ */
+function goToLogin() {
+  uni.navigateTo({
+    url: '/pages/login/index',
+  })
+}
+
+/**
+ * 跳转到我监督的Todo页面
+ */
+function goToWatching() {
+  if (!checkAuth()) {
+    uni.showToast({
+      title: '请先登录',
+      icon: 'none',
+    })
+    return
+  }
+
+  uni.navigateTo({
+    url: '/pages/watching/index',
+  })
+}
+
+/**
  * 退出登录
  */
 function handleLogout() {
+  if (!checkAuth()) {
+    uni.showToast({
+      title: '请先登录',
+      icon: 'none',
+    })
+    return
+  }
+
   uni.showModal({
     title: '确认退出',
     content: '确定要退出登录吗？',
@@ -184,11 +250,9 @@ function handleLogout() {
   })
 }
 
-// 页面加载时检查登录状态并加载数据
+// 页面加载时加载数据（未登录也可以访问）
 onMounted(() => {
-  if (requireAuth()) {
-    loadData()
-  }
+  loadData()
 })
 </script>
 
@@ -212,6 +276,22 @@ onMounted(() => {
   padding: 80rpx 0;
   font-size: 28rpx;
   color: #999;
+}
+
+.not-logged-in {
+  text-align: center;
+  padding: 80rpx 0;
+}
+
+.login-btn {
+  width: 200rpx;
+  height: 80rpx;
+  background: #1890ff;
+  color: #fff;
+  font-size: 28rpx;
+  border: none;
+  border-radius: 8rpx;
+  line-height: 80rpx;
 }
 
 .user-header {
@@ -297,6 +377,34 @@ onMounted(() => {
   padding: 32rpx;
   margin-bottom: 24rpx;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+  cursor: pointer;
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-icon {
+  font-size: 32rpx;
+  margin-right: 16rpx;
+}
+
+.menu-text {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.menu-arrow {
+  font-size: 32rpx;
+  color: #999;
 }
 
 .section-title {

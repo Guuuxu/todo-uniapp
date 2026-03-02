@@ -26,6 +26,25 @@
           </view>
         </view>
 
+        <!-- 操作按钮区域 -->
+        <view class="todo-operations">
+          <!-- 完成状态切换 -->
+          <button v-if="canEdit" :class="[
+            'operation-btn',
+            'complete-btn',
+            todoStore.currentTodo.completed ? 'completed' : '',
+          ]" @click="handleToggleComplete">
+            <text class="operation-icon">{{ todoStore.currentTodo.completed ? '✅' : '⭕' }}</text>
+            <text class="operation-text">{{ todoStore.currentTodo.completed ? '已完成' : '标记完成' }}</text>
+          </button>
+          
+          <!-- 邀请监督（只有创建者可以邀请） -->
+          <button v-if="isOwner" class="operation-btn watch-btn" @click="showInviteModal = true">
+            <text class="operation-icon">👁️</text>
+            <text class="operation-text">邀请监督</text>
+          </button>
+        </view>
+
         <!-- 点赞和评论统计 -->
         <view class="todo-actions">
           <button :class="[
@@ -43,6 +62,25 @@
             <text class="action-text">{{
               todoStore.currentTodo.comment_count
             }}</text>
+          </view>
+        </view>
+
+        <!-- 监督人列表 -->
+        <view v-if="watchers.length > 0" class="watchers-section">
+          <view class="section-title">监督人 ({{ watchers.length }})</view>
+          <view class="watchers-list">
+            <view v-for="watcher in watchers" :key="watcher.id" class="watcher-item">
+              <image
+                v-if="watcher.avatar"
+                :src="watcher.avatar"
+                class="watcher-avatar"
+                mode="aspectFill"
+              />
+              <view v-else class="watcher-avatar-placeholder">
+                {{ watcher.username.charAt(0).toUpperCase() }}
+              </view>
+              <text class="watcher-name">{{ watcher.username }}</text>
+            </view>
           </view>
         </view>
       </view>
@@ -68,9 +106,35 @@
       </view>
     </view>
 
-    <!-- 错误状态 -->
-    <view v-else class="error-container">
-      <Empty message="Todo 不存在或已被删除" icon="❌" />
+      <!-- 错误状态 -->
+      <view v-else class="error-container">
+        <Empty message="Todo 不存在或已被删除" icon="❌" />
+      </view>
+    </view>
+
+    <!-- 邀请监督弹窗 -->
+    <view v-if="showInviteModal" class="modal-overlay" @click="showInviteModal = false">
+      <view class="modal-content" @click.stop>
+        <view class="modal-header">
+          <text class="modal-title">邀请监督</text>
+          <text class="modal-close" @click="showInviteModal = false">✕</text>
+        </view>
+        <view class="modal-body">
+          <view class="form-item">
+            <text class="form-label">用户名或ID</text>
+            <input
+              v-model="inviteUsername"
+              class="form-input"
+              placeholder="请输入要邀请的用户名或ID"
+              :maxlength="50"
+            />
+          </view>
+        </view>
+        <view class="modal-footer">
+          <button class="modal-btn cancel-btn" @click="showInviteModal = false">取消</button>
+          <button class="modal-btn confirm-btn" @click="handleInviteWatch">确认邀请</button>
+        </view>
+      </view>
     </view>
   </view>
 </template>
@@ -87,10 +151,12 @@ import { useTodoStore } from '@/stores/todo'
 import { useCommentStore } from '@/stores/comment'
 import CommentItem from '@/components/CommentItem.vue'
 import Empty from '@/components/Empty.vue'
+import * as todoApi from '@/api/todo'
+import type { UserInfo } from '@/types/user'
 import { formatDate } from '@/utils/format'
 
 // 使用 hooks 和 stores
-const { requireAuth, userInfo } = useAuth()
+const { checkAuth, userInfo } = useAuth()
 const todoStore = useTodoStore()
 const commentStore = useCommentStore()
 
@@ -98,6 +164,11 @@ const commentStore = useCommentStore()
 const loading = ref(false)
 const todoId = ref('')
 const newCommentContent = ref('')
+const watchers = ref<UserInfo[]>([])
+const watchersLoading = ref(false)
+const isWatching = ref(false)
+const showInviteModal = ref(false)
+const inviteUsername = ref('')
 
 // 计算属性
 const commentList = computed(() => {
@@ -107,6 +178,43 @@ const commentList = computed(() => {
 const formattedDate = computed(() => {
   if (!todoStore.currentTodo || !todoStore.currentTodo.created_at) return ''
   return formatDate(todoStore.currentTodo.created_at, 'YYYY-MM-DD HH:mm')
+})
+
+// 获取 Todo 的创建者 ID（兼容 userId 和 user_id）
+const getTodoUserId = (todo: any): string | undefined => {
+  return todo?.userId || todo?.user_id || todo?.user?.id
+}
+
+// 判断是否可以编辑（创建者或监督人）
+const canEdit = computed(() => {
+  if (!todoStore.currentTodo || !userInfo.value) return false
+  const todoUserId = getTodoUserId(todoStore.currentTodo)
+  // 是创建者
+  if (todoUserId === userInfo.value.id) return true
+  // 是监督人
+  return watchers.value.some((w: UserInfo) => w.id === userInfo.value?.id)
+})
+
+// 判断是否是创建者（只有创建者可以邀请监督）
+const isOwner = computed(() => {
+  if (!todoStore.currentTodo || !userInfo.value) {
+    console.log('[TODO_DEBUG] isOwner: 缺少数据', {
+      hasTodo: !!todoStore.currentTodo,
+      hasUser: !!userInfo.value,
+      todo: todoStore.currentTodo,
+      user: userInfo.value
+    })
+    return false
+  }
+  const todoUserId = getTodoUserId(todoStore.currentTodo)
+  const isOwnerResult = todoUserId === userInfo.value.id
+  console.log('[TODO_DEBUG] isOwner: 判断结果', {
+    todoUserId: todoUserId,
+    currentUserId: userInfo.value.id,
+    todo: todoStore.currentTodo,
+    isOwner: isOwnerResult
+  })
+  return isOwnerResult
 })
 
 /**
@@ -123,6 +231,8 @@ async function loadTodoDetail() {
   loading.value = true
   try {
     await todoStore.fetchTodoDetail(todoId.value)
+    // 加载监督人列表
+    await loadWatchers()
   } catch (error) {
     uni.showToast({
       title: '加载失败',
@@ -130,6 +240,110 @@ async function loadTodoDetail() {
     })
   } finally {
     loading.value = false
+  }
+}
+
+/**
+ * 加载监督人列表
+ */
+async function loadWatchers() {
+  if (!todoId.value) return
+  
+  watchersLoading.value = true
+  try {
+    const watchersList = await todoApi.getTodoWatchers(todoId.value)
+    watchers.value = watchersList
+    // 检查当前用户是否是监督人
+    if (userInfo.value) {
+      isWatching.value = watchersList.some((w: UserInfo) => w.id === userInfo.value?.id)
+    }
+  } catch (error: any) {
+    // 如果接口不存在或失败，静默处理
+    console.log('[TODO_DEBUG] 加载监督人失败:', error)
+  } finally {
+    watchersLoading.value = false
+  }
+}
+
+/**
+ * 切换完成状态
+ */
+async function handleToggleComplete() {
+  if (!checkAuth() || !todoStore.currentTodo) {
+    uni.showToast({
+      title: '请先登录',
+      icon: 'none',
+    })
+    return
+  }
+
+  try {
+    const newCompleted = !todoStore.currentTodo.completed
+    await todoStore.updateTodo(todoId.value, { completed: newCompleted })
+    uni.showToast({
+      title: newCompleted ? '标记为已完成' : '标记为未完成',
+      icon: 'success',
+    })
+  } catch (error) {
+    uni.showToast({
+      title: '操作失败',
+      icon: 'none',
+    })
+  }
+}
+
+/**
+ * 邀请监督
+ */
+async function handleInviteWatch() {
+  if (!checkAuth()) {
+    uni.showToast({
+      title: '请先登录',
+      icon: 'none',
+    })
+    return
+  }
+
+  // 验证输入
+  if (!inviteUsername.value.trim()) {
+    uni.showToast({
+      title: '请输入用户名或ID',
+      icon: 'none',
+    })
+    return
+  }
+
+  try {
+    // 如果输入的是用户名，需要先获取用户ID
+    let userId = inviteUsername.value.trim()
+    
+    // 如果不是纯数字，尝试通过用户名获取用户ID
+    if (isNaN(Number(userId))) {
+      // 这里假设后端接口支持通过用户名获取用户信息
+      // 如果后端不支持，可以提示用户输入ID
+      uni.showToast({
+        title: '请输入用户ID',
+        icon: 'none',
+      })
+      return
+    }
+
+    // 调用邀请接口（需要传递用户ID）
+    await todoApi.inviteWatch(todoId.value, userId)
+    uni.showToast({
+      title: '邀请监督成功',
+      icon: 'success',
+    })
+    // 关闭弹窗
+    showInviteModal.value = false
+    inviteUsername.value = ''
+    // 重新加载监督人列表
+    await loadWatchers()
+  } catch (error: any) {
+    uni.showToast({
+      title: error.message || '邀请失败',
+      icon: 'none',
+    })
   }
 }
 
@@ -151,6 +365,14 @@ async function loadComments() {
  * 切换点赞状态
  */
 async function handleToggleLike() {
+  if (!checkAuth()) {
+    uni.showToast({
+      title: '请先登录',
+      icon: 'none',
+    })
+    return
+  }
+
   try {
     if (todoStore.currentTodo?.is_liked) {
       await todoStore.cancelLike(todoId.value)
@@ -171,6 +393,14 @@ async function handleToggleLike() {
  * 发表评论
  */
 async function handleCreateComment() {
+  if (!checkAuth()) {
+    uni.showToast({
+      title: '请先登录',
+      icon: 'none',
+    })
+    return
+  }
+
   // 验证输入
   if (!newCommentContent.value.trim()) {
     uni.showToast({
@@ -210,6 +440,14 @@ async function handleCreateComment() {
  * 删除评论
  */
 async function handleDeleteComment(commentId: string) {
+  if (!checkAuth()) {
+    uni.showToast({
+      title: '请先登录',
+      icon: 'none',
+    })
+    return
+  }
+
   uni.showModal({
     title: '确认删除',
     content: '确定要删除这条评论吗？',
@@ -240,25 +478,23 @@ async function handleDeleteComment(commentId: string) {
 
 // 页面加载时获取路由参数并加载数据
 onMounted(() => {
-  if (requireAuth()) {
-    // 获取路由参数
-    const pages = getCurrentPages()
-    const currentPage = pages[pages.length - 1]
-    const options = currentPage.options as any
+  // 获取路由参数
+  const pages = getCurrentPages()
+  const currentPage = pages[pages.length - 1]
+  const options = currentPage.options as any
 
-    if (options.id) {
-      todoId.value = options.id
-      loadTodoDetail()
-      loadComments()
-    } else {
-      uni.showToast({
-        title: '参数错误',
-        icon: 'none',
-      })
-      setTimeout(() => {
-        uni.navigateBack()
-      }, 1500)
-    }
+  if (options.id) {
+    todoId.value = options.id
+    loadTodoDetail()
+    loadComments()
+  } else {
+    uni.showToast({
+      title: '参数错误',
+      icon: 'none',
+    })
+    setTimeout(() => {
+      uni.navigateBack()
+    }, 1500)
   }
 })
 </script>
@@ -362,9 +598,101 @@ onMounted(() => {
   color: #999;
 }
 
+.todo-operations {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.operation-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  height: 72rpx;
+  background: #f7f7f7;
+  border: 1rpx solid #e0e0e0;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1;
+}
+
+.complete-btn.completed {
+  background: #e6f7ff;
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+.watch-btn {
+  background: #fff1f0;
+  border-color: #ff4d4f;
+  color: #ff4d4f;
+}
+
+.operation-icon {
+  font-size: 32rpx;
+}
+
+.operation-text {
+  font-size: 28rpx;
+}
+
+.watchers-section {
+  margin-top: 24rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.watchers-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.watcher-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 12rpx 16rpx;
+  background: #f7f7f7;
+  border-radius: 8rpx;
+}
+
+.watcher-avatar {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 24rpx;
+}
+
+.watcher-avatar-placeholder {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.watcher-name {
+  font-size: 24rpx;
+  color: #666;
+}
+
 .todo-actions {
   display: flex;
   gap: 16rpx;
+  margin-top: 24rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid #f0f0f0;
 }
 
 .action-btn {
@@ -395,6 +723,100 @@ onMounted(() => {
 
 .comment-count {
   cursor: default;
+}
+
+/* 邀请监督弹窗样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  width: 80%;
+  max-width: 600rpx;
+  background: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 32rpx;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.modal-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.modal-close {
+  font-size: 36rpx;
+  color: #999;
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 32rpx;
+}
+
+.form-item {
+  margin-bottom: 24rpx;
+}
+
+.form-label {
+  display: block;
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 16rpx;
+}
+
+.form-input {
+  width: 100%;
+  height: 80rpx;
+  padding: 0 24rpx;
+  background: #f7f7f7;
+  border: 1rpx solid #e0e0e0;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 16rpx;
+  padding: 24rpx 32rpx;
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.modal-btn {
+  flex: 1;
+  height: 80rpx;
+  border: none;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  line-height: 80rpx;
+}
+
+.cancel-btn {
+  background: #f7f7f7;
+  color: #666;
+}
+
+.confirm-btn {
+  background: #ff4d4f;
+  color: #fff;
 }
 
 .action-icon {

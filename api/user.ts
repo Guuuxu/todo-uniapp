@@ -4,6 +4,7 @@
 
 import request from './request'
 import type { LoginRequest, LoginResponse, UserInfo } from '@/types/user'
+import type { Todo } from '@/types/todo'
 
 /**
  * 用户登录
@@ -33,6 +34,27 @@ export function register(data: LoginRequest): Promise<LoginResponse> {
 export function getUserInfo(): Promise<UserInfo> {
   return request({
     url: '/users/me',
+    method: 'GET',
+  })
+}
+
+/**
+ * 获取指定用户信息
+ */
+export function getUserById(id: string): Promise<UserInfo> {
+  return request({
+    url: `/users/${id}`,
+    method: 'GET',
+  })
+}
+
+/**
+ * 获取指定用户的待办事项列表
+ * @param userId - 用户 ID
+ */
+export function getUserTodos(userId: string): Promise<Todo[]> {
+  return request({
+    url: `/todos/user/${userId}`,
     method: 'GET',
   })
 }

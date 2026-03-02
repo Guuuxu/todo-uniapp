@@ -32,6 +32,18 @@
       }
     },
     {
+      "path": "pages/ranking/detail",
+      "style": {
+        "navigationBarTitleText": "榜单详情"
+      }
+    },
+    {
+      "path": "pages/watching/index",
+      "style": {
+        "navigationBarTitleText": "我监督的Todo"
+      }
+    },
+    {
       "path": "pages/index/index",
       "style": {
         "navigationBarTitleText": "欢迎"

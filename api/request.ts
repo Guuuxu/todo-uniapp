@@ -39,6 +39,7 @@ function request<T = any>(config: RequestConfig): Promise<T> {
 
     // 处理 URL：拼接 baseURL 和 params
     let url = baseURL + config.url
+    console.log('[TODO_DEBUG] 请求URL:', url, '方法:', config.method || 'GET')
     if (config.params) {
       const params: string[] = []
       for (const key in config.params) {
@@ -64,6 +65,8 @@ function request<T = any>(config: RequestConfig): Promise<T> {
         // 响应拦截器：处理响应
         const statusCode = res.statusCode
         const responseData = res.data
+
+        console.log('[TODO_DEBUG] 响应状态码:', statusCode, '响应数据:', responseData)
 
         // HTTP 状态码错误处理
         if (statusCode >= 200 && statusCode < 300) {
@@ -109,6 +112,12 @@ function request<T = any>(config: RequestConfig): Promise<T> {
             url: '/pages/login/index',
           })
           reject(new Error('未授权，请重新登录'))
+        } else if (statusCode === 404) {
+          // 404 错误：接口不存在或资源不存在
+          const message = responseData?.message || '接口不存在或资源未找到'
+          console.log('[TODO_DEBUG] 404错误，URL:', url, '完整响应:', res, '响应数据:', responseData)
+          // 404 错误不显示 toast，由调用方处理
+          reject(new Error(message))
         } else {
           // 其他 HTTP 错误
           const message = responseData?.message || `请求失败 (${statusCode})`

@@ -25,18 +25,18 @@
         </view>
 
         <!-- 分割线 -->
-        <view class="divider">
+        <!-- <view class="divider">
           <view class="divider-line"></view>
           <text class="divider-text">或</text>
           <view class="divider-line"></view>
-        </view>
+        </view> -->
 
         <!-- 微信登录 -->
-        <button class="wechat-btn" :disabled="loading" open-type="getUserProfile" @getuserprofile="handleWechatLogin"
+        <!-- <button class="wechat-btn" :disabled="loading" open-type="getUserProfile" @getuserprofile="handleWechatLogin"
           @click="handleWechatLoginClick">
           <text class="wechat-icon">💬</text>
           <text class="wechat-text">微信快捷登录</text>
-        </button>
+        </button> -->
       </view>
     </view>
   </view>

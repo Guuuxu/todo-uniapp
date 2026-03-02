@@ -1,9 +1,12 @@
 <template>
   <view class="todo-item" @click="handleClick">
     <view class="todo-header">
-      <view class="todo-title">{{ todo.title }}</view>
-      <view v-if="showActions" class="todo-actions">
-        <button class="delete-btn" @click.stop="handleDelete">删除</button>
+      <view class="todo-title" :class="{ completed: todo.completed }">{{ todo.title }}</view>
+      <view v-if="showActions || canComplete" class="todo-actions">
+        <button v-if="canComplete" :class="['complete-btn', todo.completed ? 'completed' : '']" @click.stop="handleComplete">
+          {{ todo.completed ? '✅ 已完成' : '⭕ 未完成' }}
+        </button>
+        <button v-if="showActions" class="delete-btn" @click.stop="handleDelete">删除</button>
       </view>
     </view>
     <view class="todo-content">{{ todo.description }}</view>
@@ -39,14 +42,16 @@ const props = defineProps<{
   todo: Todo
   showActions?: boolean
   rankingType?: 'likes' | 'completed'
+  canComplete?: boolean
 }>()
 
 // 解构 props 并设置默认值
-const { showActions = true, rankingType } = props
+const { showActions = true, rankingType, canComplete = false } = props
 
 const emit = defineEmits<{
   delete: []
   click: []
+  complete: [completed: boolean]
 }>()
 
 const handleClick = () => {
@@ -55,6 +60,10 @@ const handleClick = () => {
 
 const handleDelete = () => {
   emit('delete')
+}
+
+const handleComplete = () => {
+  emit('complete', !props.todo.completed)
 }
 </script>
 
@@ -81,8 +90,31 @@ const handleDelete = () => {
   flex: 1;
 }
 
+.todo-title.completed {
+  text-decoration: line-through;
+  color: #999;
+  opacity: 0.7;
+}
+
 .todo-actions {
   margin-left: 16rpx;
+}
+
+.complete-btn {
+  font-size: 24rpx;
+  padding: 8rpx 16rpx;
+  background: #f0f0f0;
+  color: #666;
+  border: 1rpx solid #e0e0e0;
+  border-radius: 8rpx;
+  line-height: 1;
+  margin-right: 8rpx;
+}
+
+.complete-btn.completed {
+  background: #e6f7ff;
+  color: #1890ff;
+  border-color: #1890ff;
 }
 
 .delete-btn {

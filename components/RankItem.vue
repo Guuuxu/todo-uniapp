@@ -46,11 +46,11 @@ const { showActions = true, rankingType } = props
 
 const emit = defineEmits<{
   delete: []
-  click: []
+  click: [id: string]
 }>()
 
 const handleClick = () => {
-  emit('click')
+  emit('click', props.todo.id)
 }
 
 const handleDelete = () => {

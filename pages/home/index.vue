@@ -26,8 +26,10 @@
           :key="todo.id"
           :todo="todo"
           :show-actions="true"
+          :can-complete="true"
           @click="handleTodoClick(todo.id)"
           @delete="handleDelete(todo.id)"
+          @complete="handleComplete(todo.id, $event)"
         />
       </template>
       <Empty v-else message="暂无 Todo，快来创建一个吧！" icon="📝" />
@@ -48,7 +50,7 @@ import TodoItem from '@/components/TodoItem.vue'
 import Empty from '@/components/Empty.vue'
 
 // 使用 hooks 和 stores
-const { requireAuth } = useAuth()
+const { checkAuth } = useAuth()
 const todoStore = useTodoStore()
 
 // 状态
@@ -63,11 +65,14 @@ async function loadTodoList() {
   loading.value = true
   try {
     await todoStore.fetchTodoList()
-  } catch (error) {
-    uni.showToast({
-      title: '加载失败',
-      icon: 'none',
-    })
+  } catch (error: any) {
+    // 未登录时加载失败不显示错误提示（可能是401未授权）
+    if (checkAuth()) {
+      uni.showToast({
+        title: '加载失败',
+        icon: 'none',
+      })
+    }
   } finally {
     loading.value = false
   }
@@ -77,6 +82,14 @@ async function loadTodoList() {
  * 创建 Todo
  */
 async function handleCreate() {
+  if (!checkAuth()) {
+    uni.showToast({
+      title: '请先登录',
+      icon: 'none',
+    })
+    return
+  }
+
   // 验证输入
   if (!newTodoTitle.value.trim()) {
     uni.showToast({
@@ -120,6 +133,14 @@ async function handleCreate() {
  * 删除 Todo
  */
 async function handleDelete(id: string) {
+  if (!checkAuth()) {
+    uni.showToast({
+      title: '请先登录',
+      icon: 'none',
+    })
+    return
+  }
+
   uni.showModal({
     title: '确认删除',
     content: '确定要删除这个 Todo 吗？',
@@ -143,6 +164,24 @@ async function handleDelete(id: string) {
 }
 
 /**
+ * 切换完成状态
+ */
+async function handleComplete(id: string, completed: boolean) {
+  try {
+    await todoStore.updateTodo(id, { completed })
+    uni.showToast({
+      title: completed ? '标记为已完成' : '标记为未完成',
+      icon: 'success',
+    })
+  } catch (error) {
+    uni.showToast({
+      title: '操作失败',
+      icon: 'none',
+    })
+  }
+}
+
+/**
  * 点击 Todo，跳转到详情页
  */
 function handleTodoClick(id: string) {
@@ -151,11 +190,9 @@ function handleTodoClick(id: string) {
   })
 }
 
-// 页面加载时检查登录状态并加载列表
+// 页面加载时加载列表（未登录也可以查看）
 onMounted(() => {
-  if (requireAuth()) {
-    loadTodoList()
-  }
+  loadTodoList()
 })
 </script>
 
