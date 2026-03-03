@@ -51,10 +51,11 @@ export function updateTodo(id: string, data: UpdateTodoRequest): Promise<Todo> {
 /**
  * 完成
  */
-export function completeTodo(id: string): Promise<Todo> {
+export function completeTodo(id: string, data: { completed: boolean }): Promise<Todo> {
   return request({
     url: `/todos/${id}/complete`,
     method: 'POST',
+    data,
   })
 }
 

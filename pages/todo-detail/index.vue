@@ -12,9 +12,9 @@
           <view class="todo-status">
             <text :class="[
               'status-badge',
-              todoStore.currentTodo.completed ? 'completed' : 'pending',
+              todoStore.currentTodo.is_completed ? 'completed' : 'pending',
             ]">
-              {{ todoStore.currentTodo.completed ? '已完成' : '进行中' }}
+              {{ todoStore.currentTodo.is_completed ? '已完成' : '进行中' }}
             </text>
           </view>
         </view>
@@ -32,10 +32,10 @@
           <button v-if="canEdit" :class="[
             'operation-btn',
             'complete-btn',
-            todoStore.currentTodo.completed ? 'completed' : '',
+            todoStore.currentTodo.is_completed ? 'completed' : '',
           ]" @click="handleToggleComplete">
-            <text class="operation-icon">{{ todoStore.currentTodo.completed ? '✅' : '⭕' }}</text>
-            <text class="operation-text">{{ todoStore.currentTodo.completed ? '已完成' : '标记完成' }}</text>
+            <text class="operation-icon">{{ todoStore.currentTodo.is_completed ? '✅' : '⭕' }}</text>
+            <text class="operation-text">{{ todoStore.currentTodo.is_completed ? '已完成' : '标记完成' }}</text>
           </button>
           
           <!-- 邀请监督（只有创建者可以邀请） -->
@@ -279,12 +279,13 @@ async function handleToggleComplete() {
   }
 
   try {
-    const newCompleted = !todoStore.currentTodo.completed
-    await todoStore.completeTodo(todoId.value, { completed: newCompleted })
+    const newCompleted = !todoStore.currentTodo.is_completed
+    await todoStore.completeTodo(todoId.value, { is_completed: newCompleted })
     uni.showToast({
       title: newCompleted ? '标记为已完成' : '标记为未完成',
       icon: 'success',
     })
+    todoStore.currentTodo.is_completed = newCompleted
   } catch (error) {
     uni.showToast({
       title: '操作失败',

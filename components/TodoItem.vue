@@ -1,11 +1,9 @@
 <template>
   <view class="todo-item" @click="handleClick">
     <view class="todo-header">
-      <view class="todo-title" :class="{ completed: todo.completed }">{{ todo.title }}</view>
+      <view class="todo-title" :class="{ completed: todo.is_completed }">{{ todo.title }}</view>
       <view v-if="showActions || canComplete" class="todo-actions">
-        <button v-if="canComplete" :class="['complete-btn', todo.completed ? 'completed' : '']" @click.stop="handleComplete">
-          {{ todo.completed ? '✅ 已完成' : '⭕ 未完成' }}
-        </button>
+        
         <button v-if="showActions" class="delete-btn" @click.stop="handleDelete">删除</button>
       </view>
     </view>
@@ -16,16 +14,13 @@
           <text class="stat-icon">👍</text>
           <text class="stat-text">{{ todo.like_count }}</text>
         </view>
-        <view v-if="rankingType === 'completed'" class="stat-item">
-          <text class="stat-icon">✅</text>
-          <text class="stat-text">{{ todo.completed ? '已完成' : '进行中' }}</text>
-        </view>
+        
         <view class="stat-item">
           <text class="stat-icon">💬</text>
           <text class="stat-text">{{ todo.comment_count }}</text>
         </view>
       </view>
-      <view v-if="todo.completed && rankingType !== 'completed'" class="todo-status">✅ 已完成</view>
+      <view v-if="todo.is_completed && rankingType !== 'completed'" class="todo-status">✅ 已完成</view>
     </view>
   </view>
 </template>
@@ -63,7 +58,7 @@ const handleDelete = () => {
 }
 
 const handleComplete = () => {
-  emit('complete', !props.todo.completed)
+  emit('complete', !props.todo.is_completed)
 }
 </script>
 

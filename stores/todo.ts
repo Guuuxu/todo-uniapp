@@ -73,8 +73,8 @@ export const useTodoStore = defineStore('todo', () => {
   /**
    * 完成 Todo
    */
-  async function completeTodo(id: string): Promise<void> {
-    await todoApi.completeTodo(id)
+  async function completeTodo(id: string, data: { is_completed: boolean }): Promise<void> {
+    await todoApi.completeTodo(id, data)
   }
 
   /**
